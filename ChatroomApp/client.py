@@ -90,7 +90,7 @@ class Client:
         self.messages = None
 
      def start(self):
-         print('Trying to connect to {}:{}...', format(self.host, self.port))
+         print('Trying to connect to {}:{}...'.format(self.host, self.port))
 
          self.sock.connect((self.host, self.port))
 
