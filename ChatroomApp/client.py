@@ -85,7 +85,7 @@ class Client:
 
         self.host = host
         self.port = port 
-        self.sock = socket.socket(socket.Af_INET, socket.SOCK_STREAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.name = None 
         self.messages = None
 
@@ -121,4 +121,75 @@ class Client:
 
          return receive
      
-     def exit(self, textInput):
+     def send(self, textInput):
+         
+        #  Sends textInput data from the GUI
+        message = textInput.get()
+        textInput.delete(0, tk.END)
+        self.messages.insert(tk.END, '{}: {}'.format(self.name, message))
+
+        # Type 'QUIT' to leave the chatroom
+        if message == 'QUIT':
+            self.sock.sendall('Server: {} has left the chat'.fromat(self.name).encode('ascii'))
+
+            print('\nQuitting...')
+            self.sock.close()
+            os.exit(0)
+
+        
+        #  Send message to the server for boradcasting 
+        else:
+            self.sock.sendall('{}: {}'.format(self.name, message).encode('ascii'))
+
+
+def main(host, port):
+    # initialize and run GUI application
+
+    client = Client(host, port)
+    receive = client.start()
+
+    window = tk.Tk()
+    window.title = "pistagram"
+
+    fromMessage = tk.Frame(master=window)
+    scrollBar = tk.Scrollbar(master=fromMessage)
+    messages = tk.Listbox(master=fromMessage, yscrollcommand=scrollBar.set)
+    scrollBar.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+    messages.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    client.messages = messages
+    receive.messages = messages 
+
+    fromMessage.grid(row=0, column=0, columnspan=2, sticky="nsew")
+    fromEntry = tk.Frame(master=window)
+    textInput = tk.Entry(master=fromEntry)
+
+    textInput.pack(fill=tk.BOTH, expand=True)
+    textInput.bind("<Return>", lambda x: client.send(textInput))
+    textInput.insert(0, "start typing")
+
+    btnSend = tk.Button(
+        master=window, 
+        text='Send',
+        command=lambda: client.send(textInput)
+    )
+
+    fromEntry.grid(row=1, column=0, padx=10, sticky="ew")
+    btnSend.grid(row=1, column=1, pady=10, sticky="ew")
+
+    window.rowconfigure(0, minsize=500, weight=1)
+    window.rowconfigure(1, minsize=50, weight=0)
+    window.columnconfigure(0, minsize=500, weight=1)
+    window.columnconfigure(1, minsize=200, weight=0)
+
+    window.mainloop()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Chatroom Server")
+    parser.add_argument('host', help='Interface the server listens at')
+    parser.add_argument('-p', metavar='PORT', type=int, default=1060, help='TCP port(default 1060)')
+
+    args = parser.parse_args()
+
+    main(args.host, args.p)
+
